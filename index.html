@@ -105,9 +105,15 @@
             <p id="detail-date" style="color: #999; font-size: 0.9rem;"></p>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
             <p id="detail-content" style="line-height: 1.6; white-space: pre-wrap;"></p>
-            <img id="detail-image" src="" alt="첨부 이미지"> <button class="btn-danger" onclick="deletePost()">이 게시글 삭제하기</button>
+            <img id="detail-image" src="" alt="첨부 이미지">
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn-primary btn-edit" style="display:none;" onclick="enableEditMode()">수정</button>
+                <button class="btn-primary btn-save" style="display:none;" onclick="saveEdit()">저장</button>
+                <button class="btn-danger" style="margin-top:0;" onclick="deletePost()">이 게시글 삭제하기</button>
+            </div>
         </div>
     </div>
+   
 
     <script>
         let currentPostId = null;
@@ -254,10 +260,17 @@ function register() {
                     imgTag.style.display = 'none';
                 }
 		const deleteBtn = document.querySelector('.btn-danger');
+		const editBtn = document.querySelector('.btn-edit');
+		const saveBtn = document.querySelector('.btn-save');
+		
+		saveBtn.style.display = 'none'; // 열 때는 항상 저장버튼 숨김
+
 		if (post.author === currentUser) {
 			deleteBtn.style.display = 'block';
+			editBtn.style.display = 'block'; // 본인이면 수정버튼 보이기
 		} else {
 			deleteBtn.style.display = 'none';
+			editBtn.style.display = 'none';
 		}
                 document.getElementById('modal').style.display = 'block';
             });
@@ -273,6 +286,47 @@ function register() {
         }
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+        // [추가] 1. 수정 모드로 전환
+        function enableEditMode() {
+            const titleEl = document.getElementById('detail-title');
+            const contentEl = document.getElementById('detail-content');
+            
+            const currentTitle = titleEl.innerText;
+            const currentContent = contentEl.innerText;
+
+            // 텍스트를 입력창으로 변환
+            titleEl.innerHTML = `<input type="text" id="edit-title" value="${currentTitle}">`;
+            contentEl.innerHTML = `<textarea id="edit-content" rows="5">${currentContent}</textarea>`;
+
+            document.querySelector('.btn-edit').style.display = 'none';
+            document.querySelector('.btn-save').style.display = 'block';
+        }
+
+        // [추가] 2. 수정한 내용 서버에 저장
+        function saveEdit() {
+            const updatedTitle = document.getElementById('edit-title').value;
+            const updatedContent = document.getElementById('edit-content').value;
+
+            fetch(`/api/posts/${currentPostId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ title: updatedTitle, content: updatedContent })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.message) {
+                    alert("게시글이 수정되었습니다!");
+                    location.reload();
+                } else {
+                    alert(data.error);
+                }
+            });
+        }
+
+
+
 
 	// 회원 탈퇴 함수
  	function withdrawAccount() {
